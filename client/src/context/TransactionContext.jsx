@@ -12,7 +12,7 @@ const createEthereumContract = () => {
 };
 
 export const TransactionsProvider = ({ children }) => {
-  const [formData, setformData] = useState({ addressTo: "", amount: "", keyword: "", message: "" });
+  const [formData, setformData] = useState({ addressTo: "", amount: "" });
   const [currentAccount, setCurrentAccount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [transactionCount, setTransactionCount] = useState(localStorage.getItem("transactionCount"));
@@ -20,10 +20,6 @@ export const TransactionsProvider = ({ children }) => {
 
   const handleChange = (e, name) => {
     setformData((prevState) => ({ ...prevState, [name]: e.target.value }));
-  };
-
-  const clearForm = async () => {
-    setformData({ addressTo: "", amount: "", keyword: "", message: "" });
   };
 
   const getAllTransactions = async () => {
@@ -35,11 +31,8 @@ export const TransactionsProvider = ({ children }) => {
           addressTo: transaction.receiver,
           addressFrom: transaction.sender,
           timestamp: new Date(transaction.timestamp.toNumber() * 1000).toLocaleString(),
-          message: transaction.message,
-          keyword: transaction.keyword,
           amount: parseInt(transaction.amount._hex) / (10 ** 18)
         }));
-        console.log(structuredTransactions);
         setTransactions(structuredTransactions);
       } else {
         console.log("Ethereum is not present");
@@ -95,7 +88,7 @@ export const TransactionsProvider = ({ children }) => {
   const sendTransaction = async () => {
     try {
       if (ethereum) {
-        const { addressTo, amount, keyword, message } = formData;
+        const { addressTo, amount } = formData;
         const transactionsContract = createEthereumContract();
         const parsedAmount = ethers.utils.parseEther(amount);
 
@@ -109,7 +102,7 @@ export const TransactionsProvider = ({ children }) => {
           }],
         });
 
-        const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, message, keyword);
+        const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount);
 
         setIsLoading(true);
         console.log(`Loading - ${transactionHash.hash}`);
@@ -118,6 +111,7 @@ export const TransactionsProvider = ({ children }) => {
         setIsLoading(false);
         const transactionsCount = await transactionsContract.getTransactionCount();
         setTransactionCount(transactionsCount.toNumber());
+        currentBlockNumber();
       } else {
         console.log("No ethereum object");
       }
@@ -144,7 +138,6 @@ export const TransactionsProvider = ({ children }) => {
         sendTransaction,
         handleChange,
         formData,
-        clearForm,
       }}
     >
       {children}
